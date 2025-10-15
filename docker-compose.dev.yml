@@ -1,0 +1,30 @@
+services:
+  app-dev:
+    # สร้าง image จาก Dockerfile แต่จะใช้แค่ 'base' stage เป็นฐาน
+    # เพื่อให้มี SDK ครบสำหรับ development และ hot reload
+    build:
+      context: .
+      target: base # <-- บอกให้ build ถึงแค่ stage 'base' ที่มี SDK
+    container_name: dotnet-app-dev-instance
+    ports:
+      - "6002:5262" # HTTP port
+      - "7100:7100"  # HTTPS port (optional)
+    volumes:
+      # เชื่อมโค้ดจากเครื่องเราเข้าไปใน container แบบ Real-time
+      - ./Program.cs:/src/Program.cs
+      - ./appsettings.json:/src/appsettings.json
+      - ./appsettings.Development.json:/src/appsettings.Development.json
+      - ./dotnet-docker-app.csproj:/src/dotnet-docker-app.csproj
+      - ./Properties:/src/Properties
+      # ไม่ต้อง map obj และ bin เพื่อให้ใช้ของใน container
+      - /src/obj
+      - /src/bin
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5262
+      - DOTNET_USE_POLLING_FILE_WATCHER=true # เปิดใช้ file watcher สำหรับ hot reload
+      - DOTNET_WATCH_RESTART_ON_RUDE_EDIT=true
+    # สั่งให้รันด้วย dotnet watch เพื่อ hot reload
+    command: dotnet watch run --no-restore --urls "http://+:5262"
+    stdin_open: true
+    tty: true
